@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local review exports and dependency reports
+/output/
+/dependency-audit.json
+
+# Old pasted copy of the SQL (the real files are in supabase/migrations)
+/sql editor.txt

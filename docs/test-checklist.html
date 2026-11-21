@@ -1,0 +1,518 @@
+<title>Handyman Test Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500&display=swap">
+<style>
+  /* Layout: one narrow column like the app itself; sticky progress bar; sections as cards of rows. */
+  :root {
+    --page: #F6F7F2;
+    --box: #FFFFFF;
+    --border: #E3E8DE;
+    --text: #1E2B24;
+    --muted: #5B6B62;
+    --primary: #2F6B4F;
+    --primary-soft: #E3EFE3;
+    --sage-light: #F1F6E8;
+    --fail: #B4502C;
+    --fail-soft: #F8E6DF;
+    --marigold: #F2A33A;
+    --marigold-soft: #FDF0DC;
+    --font-body: "Noto Sans", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-ne: "Noto Sans Devanagari", "Noto Sans", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #121814; --box: #1A221D; --border: #2C3830; --text: #E6EDE7; --muted: #9AAAA0;
+      --primary: #7FC29E; --primary-soft: #1F3328; --sage-light: #18211B;
+      --fail: #E58A66; --fail-soft: #3A2219; --marigold: #F2B45E; --marigold-soft: #33280F;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #121814; --box: #1A221D; --border: #2C3830; --text: #E6EDE7; --muted: #9AAAA0;
+    --primary: #7FC29E; --primary-soft: #1F3328; --sage-light: #18211B;
+    --fail: #E58A66; --fail-soft: #3A2219; --marigold: #F2B45E; --marigold-soft: #33280F;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-block: 28px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  h1 { font-size: 26px; line-height: 1.2; margin: 0; text-wrap: balance; }
+  .ne { font-family: var(--font-ne); color: var(--muted); font-size: 15px; }
+  .lede { color: var(--muted); margin: 0; max-width: 62ch; }
+
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+    z-index: 10; background: var(--page);
+  }
+  .bar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 5;
+    background: var(--page);
+    padding-block: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .counts { display: flex; gap: 14px; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .counts b { font-weight: 700; }
+  .c-pass { color: var(--primary); }
+  .c-fail { color: var(--fail); }
+  .c-left { color: var(--muted); }
+  .meter { height: 8px; border-radius: 99px; background: var(--border); overflow: hidden; display: flex; }
+  .meter span { display: block; height: 100%; transition: width .25s; }
+  .meter .m-pass { background: var(--primary); }
+  .meter .m-fail { background: var(--fail); }
+  .spacer { flex: 1; }
+
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--sage-light); border: 1px solid var(--border); border-radius: 10px; }
+  .seg button {
+    font: inherit; font-size: 13px; font-weight: 500; color: var(--muted);
+    border: 0; background: transparent; border-radius: 7px; padding: 6px 10px; cursor: pointer; min-height: 32px;
+  }
+  .seg button[aria-pressed="true"] { background: var(--box); color: var(--primary); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+
+  .btn {
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    min-height: 38px; padding: 0 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--box); color: var(--text);
+  }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: var(--page); }
+  .btn.danger { color: var(--fail); border-color: var(--fail); }
+  .btn:focus-visible, .seg button:focus-visible, .choice:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 3px solid var(--marigold); outline-offset: 2px;
+  }
+  .toast { font-size: 13px; color: var(--primary); font-weight: 600; }
+
+  .setup {
+    background: var(--marigold-soft);
+    border: 1px solid var(--marigold);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .setup h2 { margin: 0; font-size: 16px; }
+  .setup ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+  .times { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
+  .time { background: var(--box); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+  .time small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .time b { font-variant-numeric: tabular-nums; }
+  .time .hint { color: var(--muted); font-size: 13px; }
+  code { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 13px; background: var(--sage-light); border: 1px solid var(--border); border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
+
+  section.card {
+    background: var(--box);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  section.card > details > summary {
+    list-style: none; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  .sec-num { font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.6em; }
+  .sec-title { flex: 1; min-width: 0; font-weight: 700; font-size: 16px; }
+  .sec-who { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
+  .pill { font-size: 12px; font-weight: 600; border-radius: 99px; padding: 3px 10px; white-space: nowrap; font-variant-numeric: tabular-nums; background: var(--sage-light); color: var(--muted); }
+  .pill.done { background: var(--primary-soft); color: var(--primary); }
+  .pill.bad { background: var(--fail-soft); color: var(--fail); }
+  .chev { color: var(--muted); transition: transform .2s; }
+  details[open] .chev { transform: rotate(90deg); }
+
+  ol.items { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+  li.item { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  li.item:last-child { border-bottom: 0; }
+  li.item.is-pass { background: color-mix(in srgb, var(--primary-soft) 45%, transparent); }
+  li.item.is-fail { background: color-mix(in srgb, var(--fail-soft) 70%, transparent); }
+  .item-row { display: flex; gap: 12px; align-items: flex-start; }
+  .item-id { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; min-width: 2.4em; }
+  .item-text { flex: 1; min-width: 0; }
+  .item-text .hint { display: block; color: var(--muted); font-size: 13px; }
+  .is-pass .item-text > span:first-child { color: var(--muted); }
+  .choices { display: flex; gap: 6px; flex-shrink: 0; }
+  .choice {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    min-width: 54px; min-height: 34px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--box); color: var(--muted);
+  }
+  .choice.pass[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--page); }
+  .choice.fail[aria-pressed="true"] { background: var(--fail); border-color: var(--fail); color: var(--page); }
+  textarea {
+    font: inherit; font-size: 14px; color: var(--text);
+    width: 100%; min-height: 60px; resize: vertical;
+    border: 1px solid var(--fail); border-radius: 8px; padding: 8px 10px; background: var(--box);
+  }
+  .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+  .empty-note { padding: 14px 16px; color: var(--muted); border-top: 1px solid var(--border); font-size: 14px; }
+  footer { color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 480px) {
+    .item-row { flex-wrap: wrap; }
+    .choices { width: 100%; padding-left: calc(2.4em + 12px); }
+    .choice { flex: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Handyman app test run</h1>
+    <div class="ne">एप परीक्षण सूची</div>
+  </header>
+  <p class="lede">Everything built so far: home, sign-in, booking, paying, the Team screens and the professional app. Work top to bottom on the iPhone in Expo Go, and mark each item Pass or Fail. Ticks are saved in this browser.</p>
+
+  <div class="bar" id="bar">
+    <div class="bar-row">
+      <div class="counts" aria-live="polite">
+        <span class="c-pass"><b id="n-pass">0</b> passed</span>
+        <span class="c-fail"><b id="n-fail">0</b> failed</span>
+        <span class="c-left"><b id="n-left">0</b> to go</span>
+      </div>
+      <span class="spacer"></span>
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-filter="todo" aria-pressed="false">To do</button>
+        <button type="button" data-filter="fail" aria-pressed="false">Failed</button>
+      </div>
+    </div>
+    <div class="meter" aria-hidden="true"><span class="m-pass" id="m-pass" style="width:0"></span><span class="m-fail" id="m-fail" style="width:0"></span></div>
+    <div class="bar-row">
+      <button type="button" class="btn primary" id="copy">Copy failed items</button>
+      <span class="toast" id="toast" role="status"></span>
+      <span class="spacer"></span>
+      <span id="reset-area"><button type="button" class="btn danger" id="reset">Start over</button></span>
+    </div>
+  </div>
+
+  <div class="setup">
+    <h2>Before you start</h2>
+    <ul>
+      <li>Three accounts on the one iPhone: <b>Customer</b> (test account), <b>Team</b> (your main account, set to admin) and <b>Professional</b> (a second account). Switch by signing out and in.</li>
+      <li>There are now two apps. Customer app: <code>npx expo start --tunnel</code>. Professional app: <code>npm run pro</code>. Each shows its own QR code.</li>
+      <li>Start Expo with <code>npx expo start --tunnel --clear</code> and scan with Expo Go (SDK 58).</li>
+      <li>Book in <b>Baneshwor</b> when testing the Team and professional parts. That is Ram’s area.</li>
+    </ul>
+    <div class="times">
+      <div class="time"><small>Bookable slots</small><b>12:15 pm – 10:15 pm</b> on your phone<br><span class="hint">8 am – 6 pm Nepal time</span></div>
+      <div class="time"><small>ASAP available</small><b>12:15 pm – 8:15 pm</b> on your phone<br><span class="hint">8 am – 4 pm Nepal time</span></div>
+    </div>
+  </div>
+
+  <main id="sections"></main>
+
+  <footer>Paste the copied failures into the chat with Claude. Add what you tapped and what you saw in each note.</footer>
+</div>
+
+<script>
+const SECTIONS = [
+  { title: 'Supabase setup', who: 'Laptop, once', items: [
+    ['All nine new SQL files ran in the SQL Editor', 'booking_flow (27 Oct), dispatch (30 Oct), professional_app (31 Oct), booking_repairs (6 Nov), professional_onboarding (15 Nov), professional_application_details (20 Nov), then on 22 Nov in this order: offer_hold_and_retry, booking_contact_phone, account_phone'],
+    ['Your main account is admin', "select email, role from profiles where role = 'admin'; shows one row"],
+    ['“Ram (sample)” is linked to your second account and verified', 'README: “Testing without SMS”'],
+  ]},
+  { title: 'Home page', who: 'Signed out', items: [
+    ['Every service shows its photo; Home cleaning and General cleaning are in the grid'],
+    ['Location chip: pick a city, then a popular place; the map opens there and Confirm location updates the chip', 'Like Foodmandu: move the map so the pin sits on the house'],
+    ['“Use my current location” asks permission and opens the map where you are', 'From Australia it correctly says you are outside the areas we serve'],
+    ['This season shows Dashain and Tihar with the Festival home cleaning card'],
+    ['There is no “Most booked” section'],
+    ['Each promo banner and season card opens the right service page'],
+    ['Reopening the location chip shows “Your saved pin”; moving the pin outside the valley disables Confirm'],
+  ]},
+  { title: 'Sign-in', who: 'Any account', items: [
+    ['Email code arrives; a wrong code shows an error; the right code signs you in'],
+    ['Google sign-in works and returns to the app'],
+    ['Test account (email and password at the bottom) signs in'],
+    ['First sign-in with a brand-new email: after the code, the app asks “What’s your name?”; the next sign-in goes straight in'],
+    ['The login screen shows the green “Are you one of our professionals?” box under Send code'],
+    ['Sign out from Account works'],
+  ]},
+  { title: 'Service page', who: 'Customer', items: [
+    ['Each job shows its price (or Rs [price]) and how long it takes'],
+    ['Included and not-included lists show'],
+    ['The info box shows the advance, cancellation and ASAP amounts'],
+    ['Continue stays disabled until a job is picked'],
+  ]},
+  { title: 'Booking', who: 'Customer', items: [
+    ['Four steps with a progress bar: Job, Time, Address, Confirm'],
+    ['“Something else” and Other services need a description before continuing'],
+    ['Days go up to 7 ahead; slots less than 2 hours away are greyed out'],
+    ['A slot with 2 bookings in the same area shows as full'],
+    ['ASAP shows +Rs 100 during ASAP hours', 'Ram must be in Baneshwor and taking jobs'],
+    ['Outside ASAP hours, ASAP is disabled and says why'],
+    ['Saved addresses list; a new address requires a landmark; the area opens the picker'],
+    ['Confirm: Change links go back to the right step'],
+    ['Confirm: price breakdown shows job, ASAP, total, Rs 200 advance and the rest'],
+    ['Confirm: cancellation rules are shown'],
+    ['Confirm: “Phone number for this job” is filled in from your last booking; a wrong number turns red and Confirm stays grey; Nepali digits work'],
+    ['Email or Google account with no number: after the first booking, Account shows that number under “Mobile number”'],
+    ['Account › Mobile number › Change: a wrong number shows a red message; a right one saves; the next booking is filled in with it'],
+    ['Signed out: sign-in is asked only at Confirm, and the booking then goes through'],
+    ['Leaving halfway and coming back resumes the draft'],
+    ['New address shows “Pin your house” until the pin is set, then “House pinned on the map”'],
+  ]},
+  { title: 'Paying the advance', who: 'Customer', items: [
+    ['Success screen says “Booking requested”'],
+    ['eSewa, Khalti, IME Pay and Bank switch the account shown'],
+    ['A too-short transaction ID is refused; TEST1234 is accepted'],
+    ['Bookings tab shows “Checking your payment”; tapping it lets you correct the ID'],
+  ]},
+  { title: 'Team: payments and dispatch', who: 'Team account', items: [
+    ['Account shows a Team row; Team has counts on its tabs'],
+    ['Payments tab shows the booking with its transaction ID'],
+    ['“Not received” needs a second tap before it rejects'],
+    ['Confirm shows the “sent to the free professionals” message'],
+    ['The booking’s history shows “Offered automatically to 1 professional”'],
+    ['With nobody free (Ram and Shyam both “Taking new jobs” off), confirming an advance puts the booking under Assign › “On hold: nobody free yet”; the history says “On hold”'],
+    ['Turning “Taking new jobs” on in the Pro app sends the on-hold job to that professional within 30 seconds; the history says “(someone became free)”'],
+    ['A booking on hold within 2 hours of its time (or ASAP) shows under “Urgent: call professionals now” in red'],
+    ['Cancelling a professional’s job sends an on-hold job at the same time to them automatically'],
+    ['Candidate list shows Ram with area, rating, jobs done and app status'],
+    ['Assign, Offer and Offer to all work'],
+    ['Call and text buttons open the phone and Messages with the text written'],
+    ['Cancel this booking needs a reason; the customer sees “Cancelled: reason”', 'Use a spare booking'],
+    ['Add a note saves it and it shows in the history'],
+  ]},
+  { title: 'Professional app: jobs', who: 'Pro app (npm run pro), approved professional', items: [
+    ['Signing in to the Pro app opens the Jobs, Earnings and Profile tabs'],
+    ['The “Taking new jobs” switch saves after reopening the app'],
+    ['New job offers show job, area and time, not the full address'],
+    ['No, thanks removes the offer'],
+    ['Accept job opens the job with customer name, phone (the job number from the booking), address and landmark'],
+    ['I’m on my way works; the customer sees “On the way”'],
+    ['Start job: a wrong code shows a message'],
+    ['Start job: 5 wrong codes lock it; only the team can then start it'],
+    ['Start job: the customer’s code from their Bookings card starts the job'],
+    ['Add extra part sends it to the customer; Mark job done is blocked until they answer'],
+    ['Mark job done shows the bill and asks for the agreed price on unpriced jobs'],
+    ['Cash counts as paid; eSewa needs a transaction ID and then shows in Team > Payments'],
+    ['I can’t do this job needs a reason; the job goes back out, but not to Ram'],
+    ['Earnings shows the finished job and total billed'],
+    ['Profile shows phone, area, services, rating and jobs done'],
+    ['Sign out returns to the customer home'],
+  ]},
+  { title: 'What the customer sees', who: 'Customer', items: [
+    ['Progress tracker: Booked, Assigned, On the way, Started, Done, with times'],
+    ['Ram’s name and call button appear once he is assigned'],
+    ['Start code hidden until the advance is confirmed, then shown, then hidden after the job starts'],
+    ['The extra part card can be approved or declined'],
+    ['Past tab shows the receipt: job, ASAP, parts and total'],
+    ['Star rating saves; Book again goes home'],
+    ['Cancelling before the job starts works'],
+    ['Edit and Reschedule say to call the team'],
+  ]},
+  { title: 'Security and general', who: 'All accounts', items: [
+    ['The customer account has no Team row in Account'],
+    ['Ram sees only his offers and his own jobs'],
+    ['Airplane mode shows friendly errors, not a crash; pull down to retry afterwards'],
+    ['Nepali text is readable everywhere and nothing is cut off'],
+  ]},
+  { title: 'Pro app: joining', who: 'Pro app (npm run pro), a new account', items: [
+    ['The Pro app opens on the welcome page in Nepali; the switch changes it to English and back'],
+    ['Sign in from the welcome page; a new person lands on a home page (“Namaste”, Signed in as …, what to keep ready, Start), not the form'],
+    ['Start opens the form; ← Home goes back, and Continue returns with the answers still there'],
+    ['The form shows “Step 1 of 7” with a progress bar; Next on an empty step marks each missing answer in red with its own message'],
+    ['A wrong mobile number (not 98/97, 10 digits) is refused with a clear message'],
+    ['Numbers typed with the Nepali keyboard (९८…) are kept and accepted'],
+    ['A date of birth under 18 years (B.S.) is refused'],
+    ['Choose district opens a list; searching “pokhara” finds Kaski, “kabhre” finds Kavrepalanchok'],
+    ['Emergency contact and reference each need a name, a choice of relation and a mobile; your own number is refused'],
+    ['Choosing eSewa or Khalti fills in your own number; Bank asks for bank, account number and name'],
+    ['The last step lists every answer; Change opens that step and “Back to check” returns'],
+    ['Save is refused until the agree box is ticked'],
+    ['Edit my details (on the documents page) opens the form with every answer kept'],
+    ['After saving, the documents page shows 3 photos as Needed and the police report as Optional'],
+    ['Take photo opens the camera (front camera for the face photo); Choose photo opens the gallery'],
+    ['Each photo shows Uploading, then Added'],
+    ['Send to the team is refused until both ID sides and the face photo are added'],
+    ['After sending: home shows “We are checking your application” and the 4-line progress; Check again refreshes'],
+    ['Closing and reopening the app opens the home page with “Namaste, name” and the progress (photos x of 3), never the form'],
+    ['In Nepali, counts use Nepali digits (चरण १ / ७, फोटो ३ मध्ये २)'],
+    ['The same account in the customer app still books like any customer'],
+  ]},
+  { title: 'Team: approving professionals', who: 'Team account, customer app', items: [
+    ['Account > Team shows “Professional applications”'],
+    ['The applicant appears with services, area, experience, ID number, reference and the photos'],
+    ['The call and text buttons open the phone'],
+    ['Send back needs a reason; the applicant then sees it under “Please fix this and send again”'],
+    ['The applicant fixes a photo and sends again; it returns to the team list'],
+    ['Approve removes them from the list; their Pro app opens Jobs after Check again'],
+    ['A newly approved professional gets the next matching job offer'],
+  ]},
+  { title: 'Pro app: earnings, maps, language', who: 'Pro app, approved professional', items: [
+    ['A job booked with a map pin shows Open in Maps, and it opens directions'],
+    ['After a cash job, Earnings shows customer paid, company share (15%), you keep, and cash collected'],
+    ['The top box says who owes whom (for a cash job: “You owe the company”)'],
+    ['Jobs tab picks up a new offer by itself within about 30 seconds'],
+    ['Profile > Language switches every professional screen between Nepali and English'],
+    ['Nepali wording reads naturally', 'Needs a native speaker to confirm'],
+  ]},
+];
+
+const KEY = 'handyman-test-run-v1';
+let state = {};
+let filter = 'all';
+try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { state = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+const openSections = new Set(SECTIONS.map((_, i) => i));
+const allIds = [];
+SECTIONS.forEach((s, si) => s.items.forEach((_, ii) => allIds.push(`${si + 1}.${ii + 1}`)));
+
+function el(tag, attrs = {}, ...kids) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') node.className = v;
+    else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const kid of kids) if (kid != null) node.append(kid);
+  return node;
+}
+
+function render() {
+  const root = document.getElementById('sections');
+  root.replaceChildren();
+  SECTIONS.forEach((section, si) => {
+    const ids = section.items.map((_, ii) => `${si + 1}.${ii + 1}`);
+    const passed = ids.filter((id) => state[id]?.r === 'pass').length;
+    const failed = ids.filter((id) => state[id]?.r === 'fail').length;
+    const pill = el('span', { class: 'pill' + (failed ? ' bad' : passed === ids.length ? ' done' : '') },
+      failed ? `${failed} failed` : `${passed} / ${ids.length}`);
+
+    const list = el('ol', { class: 'items' });
+    section.items.forEach(([text, hint], ii) => {
+      const id = `${si + 1}.${ii + 1}`;
+      const rec = state[id] || {};
+      if (filter === 'todo' && rec.r) return;
+      if (filter === 'fail' && rec.r !== 'fail') return;
+      const set = (r) => {
+        state[id] = { ...rec, r: rec.r === r ? undefined : r };
+        if (!state[id].r && !state[id].note) delete state[id];
+        save(); render(); counts();
+      };
+      const li = el('li', { class: 'item' + (rec.r ? ` is-${rec.r}` : '') },
+        el('div', { class: 'item-row' },
+          el('span', { class: 'item-id' }, id),
+          el('span', { class: 'item-text' }, el('span', {}, text), hint ? el('span', { class: 'hint' }, hint) : null),
+          el('span', { class: 'choices' },
+            el('button', { type: 'button', class: 'choice pass', 'aria-pressed': String(rec.r === 'pass'), 'aria-label': `Pass ${id}`, onclick: () => set('pass') }, 'Pass'),
+            el('button', { type: 'button', class: 'choice fail', 'aria-pressed': String(rec.r === 'fail'), 'aria-label': `Fail ${id}`, onclick: () => set('fail') }, 'Fail'),
+          ),
+        ),
+      );
+      if (rec.r === 'fail') {
+        const ta = el('textarea', { id: `note-${id}`, placeholder: 'What did you tap, and what happened?', 'aria-label': `Note for ${id}` });
+        ta.value = rec.note || '';
+        ta.addEventListener('input', () => { state[id] = { ...state[id], note: ta.value }; save(); });
+        li.append(ta);
+      }
+      list.append(li);
+    });
+    if (!list.children.length) {
+      list.append(el('li', { class: 'empty-note' }, filter === 'fail' ? 'Nothing failed here.' : 'All done in this section.'));
+    }
+
+    const details = el('details', {},
+      el('summary', {},
+        el('span', { class: 'sec-num' }, String(si + 1)),
+        el('span', { class: 'sec-title' }, section.title, el('span', { class: 'sec-who' }, section.who)),
+        pill,
+        el('span', { class: 'chev', 'aria-hidden': 'true' }, '›'),
+      ),
+      list,
+    );
+    if (openSections.has(si)) details.open = true;
+    details.addEventListener('toggle', () => { details.open ? openSections.add(si) : openSections.delete(si); });
+    root.append(el('section', { class: 'card' }, details));
+  });
+}
+
+function counts() {
+  const pass = allIds.filter((id) => state[id]?.r === 'pass').length;
+  const fail = allIds.filter((id) => state[id]?.r === 'fail').length;
+  const total = allIds.length;
+  document.getElementById('n-pass').textContent = pass;
+  document.getElementById('n-fail').textContent = fail;
+  document.getElementById('n-left').textContent = total - pass - fail;
+  document.getElementById('m-pass').style.width = `${(pass / total) * 100}%`;
+  document.getElementById('m-fail').style.width = `${(fail / total) * 100}%`;
+}
+
+function failedText() {
+  const lines = [];
+  SECTIONS.forEach((section, si) => section.items.forEach(([text], ii) => {
+    const id = `${si + 1}.${ii + 1}`;
+    if (state[id]?.r === 'fail') {
+      lines.push(`${id} ${section.title}: ${text}`);
+      if (state[id].note?.trim()) lines.push(`   What happened: ${state[id].note.trim()}`);
+    }
+  }));
+  return lines.length ? `Failed tests (${lines.filter((l) => !l.startsWith(' ')).length}):\n${lines.join('\n')}` : '';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.textContent = ''; }, 3500);
+}
+
+document.getElementById('copy').addEventListener('click', () => {
+  const text = failedText();
+  if (!text) { toast('Nothing has failed yet.'); return; }
+  const fallback = () => {
+    const ta = el('textarea', { id: 'copy-fallback', 'aria-label': 'Failed items to copy' });
+    ta.value = text;
+    document.getElementById('toast').replaceChildren(ta);
+    ta.select();
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast('Copied. Paste it into the chat.'), fallback);
+  } else fallback();
+});
+
+document.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  render();
+}));
+
+function showReset() {
+  const area = document.getElementById('reset-area');
+  area.replaceChildren(el('button', { type: 'button', class: 'btn danger', id: 'reset', onclick: askReset }, 'Start over'));
+}
+function askReset() {
+  const area = document.getElementById('reset-area');
+  area.replaceChildren(el('span', { class: 'confirm' },
+    'Clear every tick and note?',
+    el('button', { type: 'button', class: 'btn danger', id: 'reset-yes', onclick: () => { state = {}; save(); render(); counts(); showReset(); toast('Cleared.'); } }, 'Clear'),
+    el('button', { type: 'button', class: 'btn', id: 'reset-no', onclick: showReset }, 'Keep'),
+  ));
+}
+document.getElementById('reset').addEventListener('click', askReset);
+
+render();
+counts();
+</script>
