@@ -47,6 +47,7 @@
     "typecheck": "tsc --noEmit"
   },
   "private": true,
+  "license": "UNLICENSED",
   "devDependencies": {
     "@electric-sql/pglite": "0.3",
     "@expo/ngrok": "^4.1.3",
