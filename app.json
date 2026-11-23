@@ -35,6 +35,12 @@
       "expo-web-browser",
       "expo-apple-authentication"
     ],
-    "scheme": "handymanapp"
+    "scheme": "handymanapp",
+    "extra": {
+      "eas": {
+        "projectId": "b0be4149-3a9e-439e-8858-eb66da83949d"
+      }
+    },
+    "owner": "sonish_khanal"
   }
 }

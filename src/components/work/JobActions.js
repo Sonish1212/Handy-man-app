@@ -45,7 +45,18 @@ export default function JobActions({ job, role, onChanged }) {
 
   let body;
   if (mode === 'start') {
-    body = <StartJobForm job={job} team={team} onCancel={close} onStarted={() => onChanged('Job started.')} />;
+    // The right code starts the job, so the code box closes like every other step.
+    body = (
+      <StartJobForm
+        job={job}
+        team={team}
+        onCancel={close}
+        onStarted={() => {
+          close();
+          onChanged('Job started.');
+        }}
+      />
+    );
   } else if (mode === 'part') {
     body = (
       <ExtraPartForm

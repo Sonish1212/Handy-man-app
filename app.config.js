@@ -14,11 +14,21 @@ module.exports = ({ config }) => {
         photosPermission: 'Choose photos of your documents so our team can verify you.',
       },
     ],
+    // Google Maps on Android needs a key in real builds (Expo Go has its own).
+    // It lives in Expo's private build settings (EAS environment variable
+    // GOOGLE_MAPS_ANDROID_KEY), never in this public code. iPhone uses Apple
+    // Maps and needs no key.
+    ['react-native-maps', { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_KEY }],
   ];
 
   return {
     ...config,
-    name: pro ? 'Handyman Pro' : config.name,
+    name: pro ? 'Handyman Pro' : 'Handyman',
+    // Permanent once on the Play Store: never change these after release.
+    android: {
+      ...config.android,
+      package: pro ? 'com.handymannepal.pro' : 'com.handymannepal.app',
+    },
     // The pro app has its own link address, so sign-in returns to the right
     // app when both are installed. Add handymanpro://** to Supabase's
     // Redirect URLs before building the pro app for the stores.
